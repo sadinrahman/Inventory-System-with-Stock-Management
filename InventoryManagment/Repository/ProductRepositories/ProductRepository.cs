@@ -13,7 +13,7 @@ namespace InventoryManagment.Repository.ProductRepositories
 		}
 		public async Task<List<Product>> GetAllAsync()
 		{
-			return await _context.Products.Include(x=>x.Variants).ThenInclude(p=>p.SubVariants).Include(c=>c.Category).ToListAsync();
+			return await _context.Products.Include(x=>x.Variants).ThenInclude(p=>p.SubVariants).Include(c=>c.Category).Include(c=>c.User).ToListAsync();
 		}
 		public async Task<bool> AddProductAsync(Product product)
 		{
@@ -29,7 +29,7 @@ namespace InventoryManagment.Repository.ProductRepositories
 
 		public async Task<Product> GetProductById(Guid id)
 		{
-			return await _context.Products.Include(x => x.Variants).ThenInclude(p => p.SubVariants).Include(c => c.Category).FirstOrDefaultAsync(x => x.Id == id);
+			return await _context.Products.Include(x => x.Variants).ThenInclude(p => p.SubVariants).Include(c => c.Category).Include(x=>x.User).FirstOrDefaultAsync(x => x.Id == id);
 		}
 		public async Task<bool> UpdateProductAsync(Product product)
 		{

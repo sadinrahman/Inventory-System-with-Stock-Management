@@ -16,10 +16,34 @@ namespace InventoryManagment.Service.ProductServices
 			_repository = repository;
 			_varientRepository = varientRepository;
 		}
-		public async Task<List<Product>> GetAllAsync()
+		public async Task<List<ProductViewDto>> GetAllAsync()
 		{
-			return await _repository.GetAllAsync();
+			var res=await _repository.GetAllAsync();
+			var productViewDtos = new List<ProductViewDto>();
+			foreach (var product in res)
+			{
+				foreach (var variant in product.Variants)
+				{
+					foreach (var subVariant in variant.SubVariants)
+					{
+						var dto = new ProductViewDto
+						{
+							ProductCode = product.ProductCode,
+							ProductName = product.ProductName,
+							CreatedDate = product.CreatedDate, 
+							HSNCode = product.HSNCode,
+							TotalStock = product.TotalStock,
+							categoryName = product.Category?.Name,
+							UserName = product.User?.Username,
+							VariantName = variant.Name,
+							SubVariantName = subVariant.OptionValue
+						};
+						productViewDtos.Add(dto);
+					}
+				}
+			}
 
+			return productViewDtos;
 		}
 		public async Task<bool> AddProductAsync(ProductDTO productDTO ,Guid userid)
 		{
@@ -80,6 +104,54 @@ if (!productDTO.Variants.Any())
 			}
 			return true;
 
+		}
+		public async Task<string> AddStockAsync(ProductStockUpdateDto productStock,Guid userid)
+		{
+			var product = await _repository.GetProductById(productStock.ProductId);
+			if (product == null || product.ProductCode != productStock.ProductCode)
+			{
+				return "Product not found";
+			}
+			var user = product.User.Id;
+			if (user != userid)
+			{
+				return "You are not authorized to update this product";
+			}
+			var variant = product.Variants.FirstOrDefault(v => v.Name == productStock.VariantName);
+			if (variant == null)
+			{
+				return "Variant not found";
+			}
+			var subVariant = variant.SubVariants.FirstOrDefault(sv => sv.OptionValue == productStock.SubVariantName);
+			if (subVariant == null)
+			{
+				return "Sub-variant not found";
+			}
+			product.TotalStock += productStock.Stock;
+			await _repository.UpdateProductAsync(product);
+			return "Stock updated successfully";
+		}
+		public async Task<string> RemoveStockAsync(ProductStockUpdateDto productStock)
+		{
+			var product = await _repository.GetProductById(productStock.ProductId);
+			if (product == null || product.ProductCode != productStock.ProductCode)
+			{
+				return "Product not found";
+			}
+			
+			var variant = product.Variants.FirstOrDefault(v => v.Name == productStock.VariantName);
+			if (variant == null)
+			{
+				return "Variant not found";
+			}
+			var subVariant = variant.SubVariants.FirstOrDefault(sv => sv.OptionValue == productStock.SubVariantName);
+			if (subVariant == null)
+			{
+				return "Sub-variant not found";
+			}
+			product.TotalStock -= productStock.Stock;
+			await _repository.UpdateProductAsync(product);
+			return "Stock updated successfully";
 		}
 
 	}

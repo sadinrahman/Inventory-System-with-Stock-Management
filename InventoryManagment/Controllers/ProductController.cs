@@ -36,5 +36,38 @@ namespace InventoryManagment.Controllers
 			}
 			return BadRequest("user not valid");
 		}
+		[HttpGet]
+		public async Task<IActionResult> GetAllProducts()
+		{
+			var products =await _productService.GetAllAsync();
+			return Ok(products);
+		}
+		[HttpPatch("Purchasing")]
+		[Authorize]
+		public async Task<IActionResult> AddStock([FromBody] ProductStockUpdateDto productStock)
+		{
+			if (productStock == null)
+			{
+				return BadRequest("Product stock data is required.");
+			}
+			var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (Guid.TryParse(userIdString, out Guid userid))
+			{
+				var res = await _productService.AddStockAsync(productStock,userid);
+				return Ok(res);
+			}
+			return Unauthorized("user not valid");
+		}
+		[HttpPatch("Selling")]
+		
+		public async Task<IActionResult> RemoveStock([FromBody] ProductStockUpdateDto productStock)
+		{
+			if (productStock == null)
+			{
+				return BadRequest("Product stock data is required.");
+			}
+				var res = await _productService.RemoveStockAsync(productStock);
+				return Ok(res);
+		}
 	}
 }
